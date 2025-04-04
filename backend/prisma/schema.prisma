@@ -27,9 +27,10 @@ model User {
   goals      String[]
   isVerified Boolean  @default(false)
 
-  otpToken   OtpToken?
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  otpToken      OtpToken?
+  passwordReset PasswordReset?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
 
   @@map("users")
 }
@@ -43,4 +44,15 @@ model OtpToken {
   createdAt DateTime @default(now())
 
   @@map("otp_tokens")
+}
+
+model PasswordReset {
+  id        String   @id @default(uuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@map("password_resets")
 }

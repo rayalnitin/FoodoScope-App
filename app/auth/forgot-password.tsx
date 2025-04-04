@@ -9,58 +9,82 @@ import {
     Alert,
 } from "react-native";
 import { useRouter } from "expo-router";
-import { useAuthStore } from "../../stores/authStore";
 import DismissKeyboard from "@/components/DismissKeyboard";
 import { authApi } from "@/utils/api";
 
-export default function LoginScreen() {
+export default function ForgotPasswordScreen() {
     const router = useRouter();
-    const { login } = useAuthStore();
     const [email, setEmail] = useState("");
-    const [password, setPassword] = useState("");
     const [isLoading, setIsLoading] = useState(false);
+    const [isSubmitted, setIsSubmitted] = useState(false);
     const [error, setError] = useState("");
 
-    const handleLogin = async () => {
+    const handleSubmit = async () => {
         try {
             setIsLoading(true);
             setError("");
 
-            if (!email || !password) {
-                setError("Please fill in all fields");
+            if (!email) {
+                setError("Please enter your email address");
                 return;
             }
 
-            const response = await authApi.login({ email, password });
-
-            if (!response.success || !response.data) {
-                throw new Error(response.message || "Login failed");
+            // Email validation regex
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) {
+                setError("Please enter a valid email address");
+                return;
             }
 
-            // Store token and user data in auth store
-            const { token, user } = response.data;
-            login(token, user);
+            const response = await authApi.forgotPassword({ email });
 
-            // Navigate to home screen
-            router.replace("/");
+            if (!response.success) {
+                throw new Error(response.message || "Failed to process request");
+            }
+
+            setIsSubmitted(true);
         } catch (error: any) {
-            setError(error.message || "An error occurred during login");
-            console.error("Login error:", error);
+            setError(error.message || "An error occurred");
         } finally {
             setIsLoading(false);
         }
     };
 
-    const navigateToForgotPassword = () => {
-        router.push("/auth/forgot-password" as any);
-    };
+    // Show success message after submission
+    if (isSubmitted) {
+        return (
+            <View style={styles.container}>
+                <View style={styles.successContainer}>
+                    <Text style={styles.successTitle}>Email Sent!</Text>
+                    <Text style={styles.successText}>
+                        If an account exists for {email}, we've sent instructions to reset your password.
+                        Please check your email.
+                    </Text>
+                    <TouchableOpacity
+                        style={styles.button}
+                        onPress={() => router.push("/auth/reset-password" as any)}
+                    >
+                        <Text style={styles.buttonText}>Enter Reset Code</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        style={styles.linkButton}
+                        onPress={() => router.back()}
+                    >
+                        <Text style={styles.linkText}>Return to Login</Text>
+                    </TouchableOpacity>
+                </View>
+            </View>
+        );
+    }
 
     return (
         <DismissKeyboard>
             <View style={styles.container}>
                 <View style={styles.header}>
-                    <Text style={styles.title}>Welcome Back</Text>
-                    <Text style={styles.subtitle}>Login to your account</Text>
+                    <Text style={styles.title}>Forgot Password</Text>
+                    <Text style={styles.subtitle}>
+                        Enter your email and we'll send you a code to reset your password
+                    </Text>
                 </View>
 
                 {error ? <Text style={styles.errorText}>{error}</Text> : null}
@@ -75,44 +99,26 @@ export default function LoginScreen() {
                             onChangeText={setEmail}
                             keyboardType="email-address"
                             autoCapitalize="none"
-                        />
-                    </View>
-
-                    <View style={styles.inputContainer}>
-                        <Text style={styles.label}>Password</Text>
-                        <TextInput
-                            style={styles.input}
-                            placeholder="Enter your password"
-                            value={password}
-                            onChangeText={setPassword}
-                            secureTextEntry
+                            autoComplete="email"
                         />
                     </View>
 
                     <TouchableOpacity
-                        style={styles.forgotPasswordContainer}
-                        onPress={navigateToForgotPassword}
-                    >
-                        <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                        style={[styles.button, (!email || !password) && styles.buttonDisabled]}
-                        onPress={handleLogin}
-                        disabled={isLoading || !email || !password}
+                        style={[styles.button, !email && styles.buttonDisabled]}
+                        onPress={handleSubmit}
+                        disabled={isLoading || !email}
                     >
                         {isLoading ? (
                             <ActivityIndicator color="#fff" />
                         ) : (
-                            <Text style={styles.buttonText}>Login</Text>
+                            <Text style={styles.buttonText}>Send Reset Instructions</Text>
                         )}
                     </TouchableOpacity>
                 </View>
 
                 <View style={styles.footer}>
-                    <Text style={styles.footerText}>Don't have an account?</Text>
-                    <TouchableOpacity onPress={() => router.push("/auth/signup" as any)}>
-                        <Text style={styles.signupText}>Sign Up</Text>
+                    <TouchableOpacity onPress={() => router.back()}>
+                        <Text style={styles.footerText}>Back to Login</Text>
                     </TouchableOpacity>
                 </View>
             </View>
@@ -139,6 +145,7 @@ const styles = StyleSheet.create({
     subtitle: {
         fontSize: 16,
         color: "#666",
+        lineHeight: 22,
     },
     form: {
         marginBottom: 24,
@@ -177,32 +184,48 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: "600",
     },
+    errorText: {
+        color: "red",
+        marginBottom: 16,
+        textAlign: "center",
+    },
     footer: {
         flexDirection: "row",
         justifyContent: "center",
         marginTop: 24,
     },
     footerText: {
-        fontSize: 14,
-        color: "#666",
-    },
-    signupText: {
-        fontSize: 14,
-        fontWeight: "600",
+        fontSize: 16,
         color: "#000",
-        marginLeft: 5,
+        textDecorationLine: "underline",
     },
-    errorText: {
-        color: "red",
+    successContainer: {
+        flex: 1,
+        justifyContent: "center",
+        alignItems: "center",
+        padding: 16,
+        marginTop: -50,
+    },
+    successTitle: {
+        fontSize: 24,
+        fontWeight: "700",
+        color: "#000",
         marginBottom: 16,
+    },
+    successText: {
+        fontSize: 16,
+        color: "#666",
         textAlign: "center",
+        marginBottom: 32,
+        lineHeight: 24,
     },
-    forgotPasswordContainer: {
-        alignItems: "flex-end",
-        marginBottom: 8,
+    linkButton: {
+        marginTop: 16,
+        padding: 8,
     },
-    forgotPasswordText: {
-        color: "#007AFF",
-        fontSize: 14,
+    linkText: {
+        color: "#000",
+        fontSize: 16,
+        textDecorationLine: "underline",
     },
 }); 

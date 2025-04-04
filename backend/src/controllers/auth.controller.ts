@@ -181,3 +181,133 @@ export const login = async (
     next(error);
   }
 };
+
+/**
+ * Forgot password - send reset code
+ */
+export const forgotPassword = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { email } = req.body;
+
+    // Check if user exists
+    const user = await prisma.user.findUnique({
+      where: { email },
+    });
+
+    if (!user) {
+      // Don't reveal if user exists or not for security
+      res.status(200).json({
+        success: true,
+        message: "If an account with that email exists, we've sent a reset code",
+      });
+      return;
+    }
+
+    // Generate reset code
+    const resetCode = Math.floor(100000 + Math.random() * 900000).toString();
+    const resetCodeExpiry = new Date(Date.now() + 30 * 60 * 1000); // 30 minutes
+
+    // Delete any existing reset codes for this user
+    await prisma.passwordReset.deleteMany({
+      where: { userId: user.id },
+    });
+
+    // Create new reset code
+    await prisma.passwordReset.create({
+      data: {
+        userId: user.id,
+        token: resetCode,
+        expiresAt: resetCodeExpiry,
+      },
+    });
+
+    // Send reset code via email
+    try {
+      await resend.emails.send({
+        from: process.env.EMAIL_FROM || "noreply@foodoscope.com",
+        to: email,
+        subject: "Reset Your Password",
+        html: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                <h2>Reset Your Password</h2>
+                <p>We received a request to reset your password for your FoodScope account.</p>
+                <p>Your password reset code is: <strong>${resetCode}</strong></p>
+                <p>This code will expire in 30 minutes.</p>
+                <p>If you didn't request a password reset, you can safely ignore this email.</p>
+              </div>`,
+      });
+    } catch (emailError) {
+      console.error("Error sending password reset email:", emailError);
+      // Continue even if email fails, to not give away user existence
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "If an account with that email exists, we've sent a reset code",
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Reset password using code
+ */
+export const resetPassword = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { email, resetCode, newPassword } = req.body;
+
+    // Find user by email
+    const user = await prisma.user.findUnique({
+      where: { email },
+    });
+
+    if (!user) {
+      throw new ApiError(400, "Invalid or expired reset code");
+    }
+
+    // Verify reset code
+    const resetRecord = await prisma.passwordReset.findFirst({
+      where: {
+        userId: user.id,
+        token: resetCode,
+      },
+    });
+
+    if (!resetRecord) {
+      throw new ApiError(400, "Invalid or expired reset code");
+    }
+
+    if (resetRecord.expiresAt < new Date()) {
+      throw new ApiError(400, "Reset code has expired");
+    }
+
+    // Hash new password
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    // Update user's password
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { password: hashedPassword },
+    });
+
+    // Delete used reset code
+    await prisma.passwordReset.delete({
+      where: { id: resetRecord.id },
+    });
+
+    res.status(200).json({
+      success: true,
+      message: "Password has been reset successfully",
+    });
+  } catch (error) {
+    next(error);
+  }
+};

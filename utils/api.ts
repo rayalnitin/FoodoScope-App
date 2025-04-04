@@ -41,6 +41,14 @@ interface VerifyEmailResponse {
   message: string;
 }
 
+interface ResetPasswordResponse {
+  message: string;
+}
+
+interface ForgotPasswordResponse {
+  message: string;
+}
+
 /**
  * Make an API request
  * @param endpoint The API endpoint
@@ -109,6 +117,12 @@ export const authApi = {
   
   login: (credentials: { email: string; password: string }) =>
     apiRequest<LoginResponse>("/auth/login", { method: "POST", body: credentials }),
+    
+  forgotPassword: (data: { email: string }) =>
+    apiRequest<ForgotPasswordResponse>("/auth/forgot-password", { method: "POST", body: data }),
+    
+  resetPassword: (data: { email: string; resetCode: string; newPassword: string }) =>
+    apiRequest<ResetPasswordResponse>("/auth/reset-password", { method: "POST", body: data }),
 };
 
 export const userApi = {
