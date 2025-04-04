@@ -1,16 +1,30 @@
-import { View, StyleSheet } from "react-native";
+import React from 'react';
+import { View, StyleSheet } from 'react-native';
 
-export default function ProgressBar({ currentScreen, totalScreens }: { currentScreen: number; totalScreens: number }) {
+interface ProgressBarProps {
+  currentScreen: number;
+  totalScreens: number;
+}
+
+/**
+ * A visual progress bar for onboarding screens
+ */
+export default function ProgressBar({
+  currentScreen,
+  totalScreens
+}: ProgressBarProps) {
   return (
     <View style={styles.container}>
       {Array.from({ length: totalScreens }).map((_, index) => (
-        <View 
+        <View
           key={index}
           style={[
-            styles.segment,
-            index < currentScreen && styles.filledSegment,
-            index === 0 && styles.firstSegment,
-            index === totalScreens - 1 && styles.lastSegment,
+            styles.dot,
+            index + 1 <= currentScreen
+              ? styles.activeDot
+              : styles.inactiveDot,
+            index === 0 && styles.firstDot,
+            index === totalScreens - 1 && styles.lastDot,
           ]}
         />
       ))}
@@ -21,23 +35,28 @@ export default function ProgressBar({ currentScreen, totalScreens }: { currentSc
 const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
-    height: 4,
-    width: '80%',
-    borderRadius: 2,
-    overflow: 'hidden',
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: '100%',
+    height: 8,
   },
-  segment: {
+  dot: {
     flex: 1,
-    backgroundColor: '#e0e0e0',
-    marginHorizontal: 1,
+    height: 5,
+    marginHorizontal: 2,
   },
-  filledSegment: {
+  firstDot: {
+    borderTopLeftRadius: 5,
+    borderBottomLeftRadius: 5,
+  },
+  lastDot: {
+    borderTopRightRadius: 5,
+    borderBottomRightRadius: 5,
+  },
+  activeDot: {
     backgroundColor: '#000',
   },
-  firstSegment: {
-    marginLeft: 0,
-  },
-  lastSegment: {
-    marginRight: 0,
+  inactiveDot: {
+    backgroundColor: '#e0e0e0',
   },
 });

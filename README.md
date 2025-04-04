@@ -1,54 +1,103 @@
-<<<<<<< HEAD
-# Welcome to your Expo app 👋
+# FoodoScope App
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+FoodoScope is a mobile application that helps users track their food intake, fitness goals, and overall health metrics.
 
-## Get started
+## Features
 
-1. Install dependencies
+- **User Authentication**: Register, login, and email verification
+- **User Onboarding**: Collect user information about health goals, weight, height, etc.
+- **Food Tracking**: Log meals and track nutrition intake
+- **Goal Setting**: Set and track fitness and nutrition goals
+- **Personalized Recommendations**: Get personalized diet and exercise recommendations
 
-   ```bash
-   npm install
-   ```
+## Tech Stack
 
-2. Start the app
+- **Frontend**: React Native with Expo
+- **Backend**: Node.js, Express, TypeScript
+- **Database**: PostgreSQL with Prisma ORM
+- **State Management**: Zustand
+- **Authentication**: JWT
 
-   ```bash
-    npx expo start
-   ```
+## Getting Started
 
-In the output, you'll find options to open the app in a
+### Prerequisites
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+- Node.js (v14 or above)
+- npm or yarn
+- PostgreSQL database
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+### Installation
 
-## Get a fresh project
-
-When you're ready, run:
-
+1. Clone the repository
 ```bash
-npm run reset-project
+git clone https://github.com/yourusername/FoodoScope-App.git
+cd FoodoScope-App
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+2. Install dependencies for the frontend
+```bash
+npm install
+# or
+yarn install
+```
 
-## Learn more
+3. Install dependencies for the backend
+```bash
+cd backend
+npm install
+# or
+yarn install
+```
 
-To learn more about developing your project with Expo, look at the following resources:
+4. Set up environment variables
+   - Copy `.env.sample` to `.env` in the backend directory
+   - Update the variables with your own values
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+5. Set up the database
+```bash
+cd backend
+npx prisma migrate dev
+```
 
-## Join the community
+### Running the App
 
-Join our community of developers creating universal apps.
+1. Start the backend server
+```bash
+cd backend
+npm run dev
+# or
+yarn dev
+```
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
-=======
-# FoodoScope-App
->>>>>>> 5dad887e372ab29572f40dd7033e9a20440fe138
+2. Start the frontend app
+```bash
+# In the root directory
+npm start
+# or
+yarn start
+```
+
+## API Documentation
+
+### Authentication Routes
+
+- `POST /api/auth/register`: Register a new user
+- `POST /api/auth/verify-email`: Verify email with OTP
+- `POST /api/auth/login`: Login user
+
+### User Routes
+
+- `GET /api/users/profile`: Get user profile
+- `PUT /api/users/profile`: Update user profile
+
+## Contributing
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## License
+
+This project is licensed under the MIT License.

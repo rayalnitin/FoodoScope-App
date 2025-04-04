@@ -6,6 +6,7 @@ import { Resend } from "resend";
 import { ApiError } from "../middlewares/error.middleware";
 
 const prisma = new PrismaClient();
+// Use the API key from environment variables
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 /**
@@ -50,13 +51,18 @@ export const register = async (
     });
 
     // Send verification email
-    await resend.emails.send({
-      from: process.env.EMAIL_FROM || "noreply@yourdomain.com",
-      to: email,
-      subject: "Verify your email",
-      html: `<p>Your verification code is: <strong>${otp}</strong></p>
+    try {
+      await resend.emails.send({
+        from: process.env.EMAIL_FROM || "noreply@foodoscope.com",
+        to: email,
+        subject: "Verify your email",
+        html: `<p>Your verification code is: <strong>${otp}</strong></p>
             <p>This code will expire in 10 minutes.</p>`,
-    });
+      });
+    } catch (emailError) {
+      console.error("Error sending email:", emailError);
+      // Continue with registration even if email fails
+    }
 
     res.status(201).json({
       success: true,
