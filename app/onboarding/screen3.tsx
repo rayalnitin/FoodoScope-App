@@ -23,7 +23,7 @@ export default function BasicInfoScreen() {
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>You</Text>
-        <ProgressBar currentScreen={3} totalScreens={4} />
+        <ProgressBar currentScreen={3} totalScreens={8} />
       </View>
       
       <Text style={styles.subtitle}>Tell us about yourself</Text>

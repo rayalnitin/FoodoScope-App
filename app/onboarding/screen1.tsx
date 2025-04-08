@@ -20,7 +20,7 @@ export default function WelcomeScreen() {
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>Welcome</Text>
-        <ProgressBar currentScreen={1} totalScreens={4} />
+        <ProgressBar currentScreen={1} totalScreens={8} />
       </View>
       
       <Text style={styles.subtitle}>Introduce Yourself</Text>

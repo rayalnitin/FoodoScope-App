@@ -41,7 +41,7 @@ export default function GoalsScreen() {
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>Goals</Text>
-        <ProgressBar currentScreen={2} totalScreens={4} />
+        <ProgressBar currentScreen={2} totalScreens={8} />
       </View>
       
       <Text style={styles.subtitle}>Select up to 3 most important goals</Text>

@@ -12,10 +12,9 @@ export default function PhysicalStatsScreen() {
   const [weight, setWeight] = useState(userData.weight || "");
   const [goalWeight, setGoalWeight] = useState(userData.goalWeight || "");
 
-  const handleComplete = () => {
+  const handleNext = () => {
     setUserData({ height, weight, goalWeight });
-    setIsOnboarded(true);
-    router.replace("/");
+    router.push("/onboarding/screen5");
   };
 
   return (
@@ -23,7 +22,7 @@ export default function PhysicalStatsScreen() {
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>You</Text>
-        <ProgressBar currentScreen={4} totalScreens={4} />
+        <ProgressBar currentScreen={4} totalScreens={8} />
       </View>
       
       <Text style={styles.subtitle}>Tell us about yourself</Text>
@@ -79,7 +78,7 @@ export default function PhysicalStatsScreen() {
         </TouchableOpacity>
         <TouchableOpacity
           style={[styles.button, (!height || !weight || !goalWeight) && styles.disabledButton]}
-          onPress={handleComplete}
+          onPress={handleNext}
           disabled={!height || !weight || !goalWeight}
         >
           <Text style={styles.buttonText}>Complete</Text>
