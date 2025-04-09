@@ -40,7 +40,7 @@ export const register = async (
 
     // Generate OTP
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    const otpExpiry = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+    const otpExpiry = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes
 
     await prisma.otpToken.create({
       data: {
@@ -59,8 +59,19 @@ export const register = async (
         from: process.env.EMAIL_FROM || "onboarding@resend.dev",
         to: email,
         subject: "Verify your email",
-        html: `<p>Your verification code is: <strong>${otp}</strong></p>
-            <p>This code will expire in 10 minutes.</p>`,
+        html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px; background-color: #f9f9f9;">
+          <h2 style="color: #333;">Welcome to FoodScope!</h2>
+          <p style="color: #555;">Thank you for registering. Please verify your email address to complete your registration.</p>
+          <p style="font-size: 24px; font-weight: bold; color: #4CAF50;">Your verification code is: <strong>${otp}</strong></p>
+          <p style="color: #555;">This code will expire in 5 minutes.</p>
+          <p style="color: #555;">If you did not create an account, please ignore this email.</p>
+          <footer style="margin-top: 20px; font-size: 12px; color: #aaa;">
+            <p>Best regards,</p>
+            <p>The FoodScope Team</p>
+          </footer>
+        </div>
+      `,
       });
       
       console.log(`Email send response:`, emailResponse);
@@ -90,6 +101,35 @@ export const verifyEmail = async (
   try {
     const { userId, otp } = req.body;
 
+    console.log(`Verifying OTP for userId: ${userId}, OTP: ${otp}`);
+
+    // First validate the data
+    if (!userId || !otp) {
+      console.log("Missing userId or OTP in request");
+      throw new ApiError(400, "User ID and OTP are required");
+    }
+
+    // Check if OTP is in the correct format (6 digits)
+    if (!/^\d{6}$/.test(otp)) {
+      console.log(`Invalid OTP format: ${otp}`);
+      throw new ApiError(400, "OTP must be a 6-digit number");
+    }
+
+    // Check if the user exists
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      console.log(`User not found for ID: ${userId}`);
+      throw new ApiError(400, "User not found");
+    }
+
+    if (user.isVerified) {
+      console.log(`User ${userId} is already verified`);
+      throw new ApiError(400, "User is already verified");
+    }
+
     const otpRecord = await prisma.otpToken.findFirst({
       where: {
         userId,
@@ -97,24 +137,37 @@ export const verifyEmail = async (
       },
     });
 
+    console.log(`OTP Record found:`, otpRecord);
+
     if (!otpRecord) {
-      throw new ApiError(400, "Invalid OTP");
+      // Try to find any OTP for this user to understand why it failed
+      const existingOtps = await prisma.otpToken.findMany({
+        where: { userId },
+      });
+      
+      console.log(`All OTPs for userId ${userId}:`, existingOtps);
+      
+      if (existingOtps.length === 0) {
+        console.log(`No OTPs found for userId: ${userId}`);
+        throw new ApiError(400, "No verification code found. Please request a new code.");
+      } else {
+        console.log(`Entered OTP ${otp} does not match available OTPs for user`);
+        throw new ApiError(400, "Invalid OTP");
+      }
     }
 
     if (otpRecord.expiresAt < new Date()) {
+      console.log(`OTP has expired. Expiry: ${otpRecord.expiresAt}, Current: ${new Date()}`);
       throw new ApiError(400, "OTP has expired");
     }
 
     // Mark user as verified
-    const user = await prisma.user.update({
+    const updatedUser = await prisma.user.update({
       where: { id: userId },
       data: { isVerified: true },
     });
-
-    // Delete used OTP
-    await prisma.otpToken.delete({
-      where: { id: otpRecord.id },
-    });
+    
+    console.log(`User ${userId} marked as verified successfully`);
 
     // Generate token for the user
     const token = jwt.sign(
@@ -122,15 +175,26 @@ export const verifyEmail = async (
       process.env.JWT_SECRET || "secret-key",
       { expiresIn: "7d" }
     );
+    
+    console.log(`Generated authentication token for user ${userId}`);
 
+    // Delete used OTP only after successful verification
+    await prisma.otpToken.delete({
+      where: { id: otpRecord.id },
+    });
+    
+    console.log(`Deleted used OTP (id: ${otpRecord.id}) after successful verification`);
+
+    // Send success response
+    console.log(`Sending verification success response for user ${userId}`);
     res.status(200).json({
       success: true,
       message: "Email verified successfully",
       token,
       user: {
-        id: user.id,
-        email: user.email,
-        name: user.name,
+        id: updatedUser.id,
+        email: updatedUser.email,
+        name: updatedUser.name,
       },
     });
   } catch (error) {
@@ -348,7 +412,7 @@ export const resendOtp = async (
 
     // Generate new OTP
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    const otpExpiry = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+    const otpExpiry = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes
 
     await prisma.otpToken.create({
       data: {
@@ -367,8 +431,19 @@ export const resendOtp = async (
         from: process.env.EMAIL_FROM || "onboarding@resend.dev",
         to: user.email,
         subject: "Your New Verification Code",
-        html: `<p>Your new verification code is: <strong>${otp}</strong></p>
-            <p>This code will expire in 10 minutes.</p>`,
+        html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px; background-color: #f9f9f9;">
+          <h2 style="color: #333;">Welcome to FoodScope!</h2>
+          <p style="color: #555;">Thank you for registering. Please verify your email address to complete your registration.</p>
+          <p style="font-size: 24px; font-weight: bold; color: #4CAF50;">Your new verification code is: <strong>${otp}</strong></p>
+          <p style="color: #555;">This code will expire in 5 minutes.</p>
+          <p style="color: #555;">If you did not create an account, please ignore this email.</p>
+          <footer style="margin-top: 20px; font-size: 12px; color: #aaa;">
+            <p>Best regards,</p>
+            <p>The FoodScope Team</p>
+          </footer>
+        </div>
+      `,
       });
       
       console.log(`Email resend response:`, emailResponse);

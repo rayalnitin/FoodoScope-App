@@ -65,6 +65,8 @@ export async function apiRequest<T>(
   try {
     const { method, body, requiresAuth = false } = options;
     
+    console.log(`API Request to ${endpoint}:`, { method, body });
+    
     // Set up headers
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
@@ -81,7 +83,10 @@ export async function apiRequest<T>(
     }
 
     // Make the request
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+    const url = `${API_BASE_URL}${endpoint}`;
+    console.log(`Sending request to: ${url}`);
+    
+    const response = await fetch(url, {
       method,
       headers,
       body: body ? JSON.stringify(body) : undefined,
@@ -89,12 +94,23 @@ export async function apiRequest<T>(
 
     // Parse the response
     const data = await response.json();
+    console.log(`Response from ${endpoint}:`, { status: response.status, data });
 
     if (!response.ok) {
+      console.error(`Error response from ${endpoint}:`, { status: response.status, data });
       return {
         success: false,
         message: data.message || `Error: ${response.status}`,
       };
+    }
+
+    // For verification endpoint, log additional details
+    if (endpoint === '/auth/verify-email' && data.success) {
+      console.log('Verification successful:', { 
+        userId: options.body?.userId,
+        hasToken: !!data.token,
+        hasUserData: !!data.user
+      });
     }
 
     return {
@@ -103,6 +119,7 @@ export async function apiRequest<T>(
       message: data.message,
     };
   } catch (error: any) {
+    console.error(`Exception in API request to ${endpoint}:`, error);
     return {
       success: false,
       message: error.message || "An unknown error occurred",

@@ -7,6 +7,8 @@ import {
     StyleSheet,
     ActivityIndicator,
     Alert,
+    ToastAndroid, // Import ToastAndroid for Android
+    Platform, // Import Platform to check the platform
 } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useAuthStore } from "../../stores/authStore";
@@ -25,6 +27,15 @@ export default function VerifyScreen() {
     useEffect(() => {
         if (!userId) {
             Alert.alert("Error", "User ID not found. Please try signing up again.");
+            router.replace("/auth/signup");
+            return;
+        }
+
+        console.log("User ID from params:", userId, "type:", typeof userId);
+
+        // Ensure userId is a string (URL params can sometimes be arrays)
+        if (typeof userId !== 'string') {
+            Alert.alert("Error", "Invalid User ID format. Please try signing up again.");
             router.replace("/auth/signup");
             return;
         }
@@ -49,6 +60,14 @@ export default function VerifyScreen() {
         return `${mins}:${secs < 10 ? "0" + secs : secs}`;
     };
 
+    const showToast = (message: string) => {
+        if (Platform.OS === 'android') {
+            ToastAndroid.show(message, ToastAndroid.SHORT);
+        } else {
+            Alert.alert("Success", message);
+        }
+    };
+
     const handleVerify = async () => {
         try {
             setIsLoading(true);
@@ -64,7 +83,11 @@ export default function VerifyScreen() {
                 return;
             }
 
+            console.log(`Attempting to verify OTP: ${otp} for userId: ${userId}`);
+
             const response = await authApi.verifyEmail({ userId, otp });
+
+            console.log("Verification response:", response);
 
             if (!response.success || !response.data) {
                 throw new Error(response.message || "Verification failed");
@@ -74,16 +97,51 @@ export default function VerifyScreen() {
             const { token, user } = response.data;
             login(token, user);
 
-            // Navigate to home screen
-            Alert.alert("Success", "Your email has been verified successfully!", [
-                {
-                    text: "OK",
-                    onPress: () => router.replace("/"),
-                },
-            ]);
+            // Show success toast
+            showToast("Email verified successfully!");
+            console.log("Verification successful, token received:", token);
+
+            // Use Alert for important confirmation on all platforms
+            Alert.alert(
+                "Verification Successful",
+                "Your email has been verified successfully. You can now log in.",
+                [
+                    {
+                        text: "Go to Login",
+                        onPress: () => {
+                            console.log("Navigating to login screen");
+                            router.replace("/auth/login");
+                        }
+                    }
+                ]
+            );
+
+
         } catch (error: any) {
-            setError(error.message || "An error occurred during verification");
             console.error("Verification error:", error);
+
+            // Check if error message is empty or undefined
+            let errorMessage = "An error occurred during verification";
+
+            if (error.message) {
+                // Log the specific error message
+                console.error(`Error message: ${error.message}`);
+                errorMessage = error.message;
+
+                // Handle specific error cases
+                if (error.message.includes("Invalid OTP")) {
+                    errorMessage = "The verification code you entered is incorrect. Please try again.";
+                } else if (error.message.includes("expired")) {
+                    errorMessage = "Your verification code has expired. Please request a new one.";
+                } else if (error.message.includes("User is already verified")) {
+                    errorMessage = "Your account is already verified. Please proceed to login.";
+                    setTimeout(() => {
+                        router.replace("/auth/login");
+                    }, 2000);
+                }
+            }
+
+            setError(errorMessage);
         } finally {
             setIsLoading(false);
         }
@@ -99,14 +157,17 @@ export default function VerifyScreen() {
                 return;
             }
 
+            console.log(`Attempting to resend OTP for userId: ${userId}`);
+
             const response = await authApi.resendOtp({ userId });
+
+            console.log("Resend OTP response:", response);
 
             if (!response.success) {
                 throw new Error(response.message || "Failed to resend verification code");
             }
 
-            // Reset timer
-            setTimer(300);
+            setTimer(60);
 
             Alert.alert(
                 "Success",
@@ -139,7 +200,11 @@ export default function VerifyScreen() {
                             style={styles.input}
                             placeholder="Enter 6-digit code"
                             value={otp}
-                            onChangeText={setOtp}
+                            onChangeText={(text) => {
+                                // Only allow digits
+                                const numericText = text.replace(/[^0-9]/g, '');
+                                setOtp(numericText);
+                            }}
                             keyboardType="number-pad"
                             maxLength={6}
                             autoFocus
@@ -213,6 +278,12 @@ const styles = StyleSheet.create({
         fontSize: 16,
         color: "#666",
         marginBottom: 10,
+    },
+    errorText: {
+        color: "red",
+        fontSize: 14,
+        marginBottom: 16,
+        textAlign: "center",
     },
     form: {
         marginBottom: 24,
@@ -290,10 +361,5 @@ const styles = StyleSheet.create({
         fontWeight: "600",
         color: "#000",
         marginLeft: 5,
-    },
-    errorText: {
-        color: "red",
-        marginBottom: 16,
-        textAlign: "center",
     },
 }); 
