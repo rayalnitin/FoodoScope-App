@@ -62,6 +62,12 @@ export default function SignupScreen() {
                     },
                 ]
             );
+
+            // Redirect to verify page after successful signup
+            router.push({
+                pathname: "/auth/verify" as any,
+                params: { userId }
+            });
         } catch (error: any) {
             setError(error.message || "An error occurred during registration");
             console.error("Registration error:", error);

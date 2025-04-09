@@ -90,8 +90,34 @@ export default function VerifyScreen() {
     };
 
     const resendOtp = async () => {
-        // Not implemented yet - would need endpoint to resend OTP
-        Alert.alert("Coming Soon", "Resend OTP feature will be available soon!");
+        try {
+            setIsLoading(true);
+            setError("");
+
+            if (!userId) {
+                setError("User ID not found. Please try signing up again.");
+                return;
+            }
+
+            const response = await authApi.resendOtp({ userId });
+
+            if (!response.success) {
+                throw new Error(response.message || "Failed to resend verification code");
+            }
+
+            // Reset timer
+            setTimer(300);
+
+            Alert.alert(
+                "Success",
+                "A new verification code has been sent to your email"
+            );
+        } catch (error: any) {
+            setError(error.message || "Failed to resend verification code");
+            console.error("Resend OTP error:", error);
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     return (

@@ -118,6 +118,9 @@ export const authApi = {
   verifyEmail: (data: { userId: string; otp: string }) =>
     apiRequest<VerifyEmailResponse>("/auth/verify-email", { method: "POST", body: data }),
   
+  resendOtp: (data: { userId: string }) =>
+    apiRequest<{ message: string }>("/auth/resend-otp", { method: "POST", body: data }),
+  
   login: (credentials: { email: string; password: string }) =>
     apiRequest<LoginResponse>("/auth/login", { method: "POST", body: credentials }),
     

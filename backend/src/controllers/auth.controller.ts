@@ -52,13 +52,18 @@ export const register = async (
 
     // Send verification email
     try {
-      await resend.emails.send({
-        from: process.env.EMAIL_FROM || "noreply@foodoscope.com",
+      console.log(`Attempting to send verification email to: ${email}`);
+      console.log(`Using Resend API Key: ${process.env.RESEND_API_KEY ? 'Available' : 'Not available'}`);
+      
+      const emailResponse = await resend.emails.send({
+        from: process.env.EMAIL_FROM || "onboarding@resend.dev",
         to: email,
         subject: "Verify your email",
         html: `<p>Your verification code is: <strong>${otp}</strong></p>
             <p>This code will expire in 10 minutes.</p>`,
       });
+      
+      console.log(`Email send response:`, emailResponse);
     } catch (emailError) {
       console.error("Error sending email:", emailError);
       // Continue with registration even if email fails
@@ -228,7 +233,7 @@ export const forgotPassword = async (
     // Send reset code via email
     try {
       await resend.emails.send({
-        from: process.env.EMAIL_FROM || "noreply@foodoscope.com",
+        from: process.env.EMAIL_FROM || "onboarding@resend.dev",
         to: email,
         subject: "Reset Your Password",
         html: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -306,6 +311,75 @@ export const resetPassword = async (
     res.status(200).json({
       success: true,
       message: "Password has been reset successfully",
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Resend OTP verification code
+ */
+export const resendOtp = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { userId } = req.body;
+
+    // Find the user
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new ApiError(400, "User not found");
+    }
+
+    if (user.isVerified) {
+      throw new ApiError(400, "User is already verified");
+    }
+
+    // Delete any existing OTP
+    await prisma.otpToken.deleteMany({
+      where: { userId },
+    });
+
+    // Generate new OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const otpExpiry = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+    await prisma.otpToken.create({
+      data: {
+        userId,
+        token: otp,
+        expiresAt: otpExpiry,
+      },
+    });
+
+    // Send verification email
+    try {
+      console.log(`Attempting to resend verification email to: ${user.email}`);
+      console.log(`Using Resend API Key: ${process.env.RESEND_API_KEY ? 'Available' : 'Not available'}`);
+      
+      const emailResponse = await resend.emails.send({
+        from: process.env.EMAIL_FROM || "onboarding@resend.dev",
+        to: user.email,
+        subject: "Your New Verification Code",
+        html: `<p>Your new verification code is: <strong>${otp}</strong></p>
+            <p>This code will expire in 10 minutes.</p>`,
+      });
+      
+      console.log(`Email resend response:`, emailResponse);
+    } catch (emailError) {
+      console.error("Error sending email:", emailError);
+      throw new ApiError(500, "Failed to send verification email");
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Verification code has been resent to your email",
     });
   } catch (error) {
     next(error);

@@ -4,7 +4,8 @@ import {
   register, 
   verifyEmail, 
   forgotPassword, 
-  resetPassword 
+  resetPassword,
+  resendOtp
 } from "../controllers/auth.controller";
 import { validateRequest } from "../middlewares/validation.middleware";
 import {
@@ -13,12 +14,14 @@ import {
   registerSchema,
   resetPasswordSchema,
   verifyEmailSchema,
+  resendOtpSchema
 } from "../validators/auth.validator";
 
 const router = Router();
 
 router.post("/register", validateRequest(registerSchema), register);
 router.post("/verify-email", validateRequest(verifyEmailSchema), verifyEmail);
+router.post("/resend-otp", validateRequest(resendOtpSchema), resendOtp);
 router.post("/login", validateRequest(loginSchema), login);
 router.post("/forgot-password", validateRequest(forgotPasswordSchema), forgotPassword);
 router.post("/reset-password", validateRequest(resetPasswordSchema), resetPassword);
