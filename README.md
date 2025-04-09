@@ -1,6 +1,101 @@
 # FoodoScope App
 
-FoodoScope is a mobile application that helps users track their food intake, fitness goals, and overall health metrics.
+A food tracking and nutrition app built with React Native (Expo) and Node.js.
+
+## Project Structure
+
+- `/app` - Frontend React Native application built with Expo
+- `/backend` - Node.js, Express, and Prisma backend
+
+## Setup Instructions
+
+### Prerequisites
+
+- Node.js (v16 or later)
+- npm or yarn
+- PostgreSQL database
+
+### Backend Setup
+
+1. Navigate to the backend directory:
+   ```
+   cd backend
+   ```
+
+2. Install dependencies:
+   ```
+   npm install
+   ```
+
+3. Create a `.env` file based on `.env.sample`:
+   ```
+   cp .env.sample .env
+   ```
+
+4. Update the PostgreSQL connection string in `.env`:
+   ```
+   DATABASE_URL="postgresql://postgres:password@localhost:5432/foodscopedb?schema=public"
+   ```
+
+5. Generate Prisma client:
+   ```
+   npm run prisma:generate
+   ```
+
+6. Run database migrations:
+   ```
+   npm run prisma:migrate
+   ```
+
+7. Start the backend development server:
+   ```
+   npm run dev
+   ```
+
+The backend server will run on http://localhost:5000.
+
+### Frontend Setup
+
+1. Navigate to the main directory:
+   ```
+   cd ..
+   ```
+
+2. Install dependencies:
+   ```
+   npm install
+   ```
+
+3. Start the Expo development server:
+   ```
+   npx expo start
+   ```
+
+4. Run on your device or emulator by following the instructions in the terminal.
+
+## Authentication Flow
+
+The app implements a complete authentication system:
+
+1. User Registration and Email Verification
+2. Login with JWT token
+3. Protected routes for authenticated users
+4. Password recovery flow
+
+## API Endpoints
+
+### Authentication
+
+- `POST /api/auth/register` - Register a new user
+- `POST /api/auth/verify-email` - Verify email with OTP
+- `POST /api/auth/login` - Login and get JWT token
+- `POST /api/auth/forgot-password` - Request password reset
+- `POST /api/auth/reset-password` - Reset password with code
+
+### User
+
+- `GET /api/users/profile` - Get authenticated user profile
+- `PUT /api/users/profile` - Update user profile
 
 ## Features
 
@@ -17,78 +112,6 @@ FoodoScope is a mobile application that helps users track their food intake, fit
 - **Database**: PostgreSQL with Prisma ORM
 - **State Management**: Zustand
 - **Authentication**: JWT
-
-## Getting Started
-
-### Prerequisites
-
-- Node.js (v14 or above)
-- npm or yarn
-- PostgreSQL database
-
-### Installation
-
-1. Clone the repository
-```bash
-git clone https://github.com/yourusername/FoodoScope-App.git
-cd FoodoScope-App
-```
-
-2. Install dependencies for the frontend
-```bash
-npm install
-# or
-yarn install
-```
-
-3. Install dependencies for the backend
-```bash
-cd backend
-npm install
-# or
-yarn install
-```
-
-4. Set up environment variables
-   - Copy `.env.sample` to `.env` in the backend directory
-   - Update the variables with your own values
-
-5. Set up the database
-```bash
-cd backend
-npx prisma migrate dev
-```
-
-### Running the App
-
-1. Start the backend server
-```bash
-cd backend
-npm run dev
-# or
-yarn dev
-```
-
-2. Start the frontend app
-```bash
-# In the root directory
-npm start
-# or
-yarn start
-```
-
-## API Documentation
-
-### Authentication Routes
-
-- `POST /api/auth/register`: Register a new user
-- `POST /api/auth/verify-email`: Verify email with OTP
-- `POST /api/auth/login`: Login user
-
-### User Routes
-
-- `GET /api/users/profile`: Get user profile
-- `PUT /api/users/profile`: Update user profile
 
 ## Contributing
 

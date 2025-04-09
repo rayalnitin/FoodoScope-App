@@ -1,7 +1,10 @@
 import { useAuthStore } from "../stores/authStore";
 
 // Base URL for the API
+// Adjust this to match your backend server address and port
 const API_BASE_URL = "http://localhost:5000/api";
+// For production, you might want to use a relative URL or environment variable
+// const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || "/api";
 
 // Interface for API response
 interface ApiResponse<T> {
